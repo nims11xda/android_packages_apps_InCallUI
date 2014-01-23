@@ -305,7 +305,7 @@ public final class AccelerometerListener {
 
     private int getFlipAction(){
         int flipAction = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.FLIP_ACTION_KEY,0);
+                Settings.System.FLIP_ACTION,0);
         return flipAction;
     }
 
