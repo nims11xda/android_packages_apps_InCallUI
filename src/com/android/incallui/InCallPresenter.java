@@ -31,9 +31,6 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.provider.Settings;
 import android.os.PowerManager;
-import android.os.RemoteException;
-import android.os.ServiceManager;
-import android.view.IWindowManager;
 import android.content.ActivityNotFoundException;
 
 import com.android.services.telephony.common.Call;
@@ -71,7 +68,6 @@ public class InCallPresenter implements CallList.Listener {
     private AccelerometerListener mAccelerometerListener;
     private ProximitySensor mProximitySensor;
     private boolean mServiceConnected = false;
-    private boolean mCallUiInBackground = false;
     private static String LOG_TAG = "InCallPresenter";
 
     /**
@@ -403,8 +399,7 @@ public class InCallPresenter implements CallList.Listener {
         mInCallState = newState;
 
         // Disable notification shade and soft navigation buttons
-        // on new incoming call as long it is no background call
-        if (newState.isIncoming() && !mCallUiInBackground) {
+        if (newState.isIncoming()) {
             CallCommandClient.getInstance().setSystemBarNavigationEnabled(false);
             if (mAccelerometerListener != null) {
                 mAccelerometerListener.enableSensor(true);
@@ -800,24 +795,6 @@ public class InCallPresenter implements CallList.Listener {
             mInCallActivity = null;
         }
 
-        // check if the user want to have the call UI in background and set it up
-        mCallUiInBackground = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.CALL_UI_IN_BACKGROUND, 0) == 1;
-
-        if (mCallUiInBackground) {
-            // get power service to check later if screen is on
-            final PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-            // check if keyguard is currently shown
-            final IWindowManager windowManagerService = IWindowManager.Stub.asInterface(
-                    ServiceManager.getService(Context.WINDOW_SERVICE));
-            boolean isKeyguardShowing = false;
-            try {
-                isKeyguardShowing = windowManagerService.isKeyguardLocked();
-            } catch (RemoteException e) {
-            }
-            mCallUiInBackground = pm.isScreenOn() && !isKeyguardShowing;
-        }
-
         boolean nonIntrusiveDisabled = Settings.System.getInt(mContext.getContentResolver(),
                 Settings.System.NON_INTRUSIVE_INCALL, 1) == 0;
 
@@ -828,7 +805,7 @@ public class InCallPresenter implements CallList.Listener {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             mContext.startActivity(intent);
         } else {
-            mStatusBarNotifier.updateNotificationAndLaunchIncomingCallUi(inCallState, mCallList, mCallUiInBackground);
+            mStatusBarNotifier.updateNotificationAndLaunchIncomingCallUi(inCallState, mCallList);
         }
     }
 
@@ -836,7 +813,7 @@ public class InCallPresenter implements CallList.Listener {
      * Starts the incoming call Ui immediately, bypassing the card UI
      */
     public void startIncomingCallUi(InCallState inCallState) {
-        mStatusBarNotifier.updateNotificationAndLaunchIncomingCallUi(inCallState, mCallList, mCallUiInBackground);
+        mStatusBarNotifier.updateNotificationAndLaunchIncomingCallUi(inCallState, mCallList);
     }
 
     /**
