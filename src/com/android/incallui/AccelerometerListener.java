@@ -280,7 +280,7 @@ public final class AccelerometerListener {
 
     private int getFlipAction(){
         return Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.CALL_FLIP_ACTION_KEY, RINGING_NO_ACTION);
+                Settings.System.FLIP_ACTION, RINGING_NO_ACTION);
     }
 
     private ITelephony getTeleService() {
